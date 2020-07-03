@@ -3092,6 +3092,7 @@ NK_API void nk_label_colored(struct nk_context*, const char*, nk_flags align, st
 NK_API void nk_label_wrap(struct nk_context*, const char*);
 NK_API void nk_label_colored_wrap(struct nk_context*, const char*, struct nk_color);
 NK_API void nk_image(struct nk_context*, struct nk_image);
+NK_API void nk_image_padding(struct nk_context*, struct nk_image, struct nk_vec2);
 NK_API void nk_image_color(struct nk_context*, struct nk_image, struct nk_color);
 #ifdef NK_INCLUDE_STANDARD_VARARGS
 NK_API void nk_labelf(struct nk_context*, nk_flags, NK_PRINTF_FORMAT_STRING const char*, ...) NK_PRINTF_VARARG_FUNC(3);
@@ -4591,6 +4592,7 @@ NK_API void nk_fill_polygon(struct nk_command_buffer*, float*, int point_count, 
 
 /* misc */
 NK_API void nk_draw_image(struct nk_command_buffer*, struct nk_rect, const struct nk_image*, struct nk_color);
+NK_API void nk_draw_image_padding(struct nk_command_buffer*, struct nk_rect, const struct nk_image*, struct nk_color, struct nk_vec2);
 NK_API void nk_draw_text(struct nk_command_buffer*, struct nk_rect, const char *text, int len, const struct nk_user_font*, struct nk_color, struct nk_color);
 NK_API void nk_push_scissor(struct nk_command_buffer*, struct nk_rect);
 NK_API void nk_push_custom(struct nk_command_buffer*, struct nk_rect, nk_command_custom_callback, nk_handle usr);
@@ -9156,6 +9158,29 @@ nk_draw_image(struct nk_command_buffer *b, struct nk_rect r,
     cmd->y = (short)r.y;
     cmd->w = (unsigned short)NK_MAX(0, r.w);
     cmd->h = (unsigned short)NK_MAX(0, r.h);
+    cmd->img = *img;
+    cmd->col = col;
+}
+NK_API void
+nk_draw_image_padding(struct nk_command_buffer *b, struct nk_rect r,
+              const struct nk_image *img, struct nk_color col, struct nk_vec2 padding)
+{
+    struct nk_command_image *cmd;
+    NK_ASSERT(b);
+    if (!b) return;
+    if (b->use_clipping) {
+        const struct nk_rect *c = &b->clip;
+        if (c->w == 0 || c->h == 0 || !NK_INTERSECT(r.x, r.y, r.w, r.h, c->x, c->y, c->w, c->h))
+            return;
+    }
+
+    cmd = (struct nk_command_image*)
+        nk_command_buffer_push(b, NK_COMMAND_IMAGE, sizeof(*cmd));
+    if (!cmd) return;
+    cmd->x = (short)(r.x + padding.x);
+    cmd->y = (short)(r.y + padding.y);
+    cmd->w = (unsigned short)NK_MAX(0, r.w - padding.x * 2);
+    cmd->h = (unsigned short)NK_MAX(0, r.h - padding.y * 2);
     cmd->img = *img;
     cmd->col = col;
 }
@@ -23286,6 +23311,21 @@ nk_image(struct nk_context *ctx, struct nk_image img)
     win = ctx->current;
     if (!nk_widget(&bounds, ctx)) return;
     nk_draw_image(&win->buffer, bounds, &img, nk_white);
+}
+NK_API void
+nk_image_padding(struct nk_context *ctx, struct nk_image img, struct nk_vec2 padding)
+{
+    struct nk_window *win;
+    struct nk_rect bounds;
+
+    NK_ASSERT(ctx);
+    NK_ASSERT(ctx->current);
+    NK_ASSERT(ctx->current->layout);
+    if (!ctx || !ctx->current || !ctx->current->layout) return;
+
+    win = ctx->current;
+    if (!nk_widget(&bounds, ctx)) return;
+    nk_draw_image_padding(&win->buffer, bounds, &img, nk_white, padding);
 }
 NK_API void
 nk_image_color(struct nk_context *ctx, struct nk_image img, struct nk_color col)

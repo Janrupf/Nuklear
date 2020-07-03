@@ -123,6 +123,21 @@ nk_image(struct nk_context *ctx, struct nk_image img)
     nk_draw_image(&win->buffer, bounds, &img, nk_white);
 }
 NK_API void
+nk_image_padding(struct nk_context *ctx, struct nk_image img, struct nk_vec2 padding)
+{
+    struct nk_window *win;
+    struct nk_rect bounds;
+
+    NK_ASSERT(ctx);
+    NK_ASSERT(ctx->current);
+    NK_ASSERT(ctx->current->layout);
+    if (!ctx || !ctx->current || !ctx->current->layout) return;
+
+    win = ctx->current;
+    if (!nk_widget(&bounds, ctx)) return;
+    nk_draw_image_padding(&win->buffer, bounds, &img, nk_white, padding);
+}
+NK_API void
 nk_image_color(struct nk_context *ctx, struct nk_image img, struct nk_color col)
 {
     struct nk_window *win;
