@@ -19485,7 +19485,10 @@ nk_panel_begin(struct nk_context *ctx, const char *title, enum nk_panel_type pan
         body.h = (win->bounds.h - layout->header_height);
         if (style->window.fixed_background.type == NK_STYLE_ITEM_IMAGE)
             nk_draw_image(out, body, &style->window.fixed_background.data.image, nk_white);
-        else nk_fill_rect(out, body, 0, style->window.fixed_background.data.color);
+        else {
+            nk_fill_rect(out, body, style->window.rounding, style->window.fixed_background.data.color);
+            nk_stroke_rect(out, body, style->window.rounding, nk_panel_get_border(style, win->flags, panel_type), nk_panel_get_border_color(style, panel_type));
+        }
     }
 
     /* set clipping rectangle */
